@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as jsYaml from 'js-yaml';
+import { Enforcer } from 'openapi-enforcer';
 import * as path from 'path';
+import { isCyclic } from './circular.ref';
 import * as $RefParser from 'json-schema-ref-parser';
 import { OpenAPISchemaValidator } from './openapi.schema.validator';
 import { BasePath } from './base.path';
@@ -23,9 +25,8 @@ export class OpenAPIFramework {
     visitor: OpenAPIFrameworkVisitor,
   ): Promise<OpenAPIFrameworkInit> {
     const args = this.args;
-    const apiDoc = await this.copy(
-      await this.loadSpec(args.apiDoc, args.$refParser),
-    );
+    const apiDoc = await this.loadSpec(args.apiDoc, args.$refParser); //await this.copy(
+    //);
     const basePathObs = this.getBasePathsFromServers(apiDoc.servers);
     const basePaths = Array.from(
       basePathObs.reduce((acc, bp) => {
@@ -91,9 +92,10 @@ export class OpenAPIFramework {
             fs.readFileSync(absolutePath, 'utf8'),
             { json: true },
           );
-          return $refParser.mode === 'dereference'
-            ? $RefParser.dereference(docWithRefs)
-            : $RefParser.bundle(docWithRefs);
+          return Enforcer.dereference(docWithRefs);
+          // return $refParser.mode === 'dereference'
+          //   ? $RefParser.dereference(docWithRefs)
+          //   : $RefParser.bundle(docWithRefs);
         } finally {
           process.chdir(origCwd);
         }
@@ -103,12 +105,15 @@ export class OpenAPIFramework {
         );
       }
     }
-    return $refParser.mode === 'dereference'
-      ? $RefParser.dereference(filePath)
-      : $RefParser.bundle(filePath);
+    // process.exit(1)
+    // return $refParser.mode === 'dereference'
+    // return $RefParser.dereference(filePath);
+    return Enforcer.dereference(filePath);
+    // : $RefParser.bundle(filePath);
   }
 
   private copy<T>(obj: T): T {
+    // isCyclic(obj);
     return JSON.parse(JSON.stringify(obj));
   }
 

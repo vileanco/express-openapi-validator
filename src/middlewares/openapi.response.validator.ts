@@ -63,9 +63,11 @@ export class ResponseValidator {
       return this.buildValidators(responses);
     }
 
+    const openapi = <OpenApiRequestMetadata>req.openapi;
+    const path = openapi.expressRoute;
     const contentTypeKey =
       ContentType.from(req).equivalents()[0] || 'not_provided';
-    const key = `${req.method}-${req.originalUrl}-${contentTypeKey}`;
+    const key = `${req.method}-${path}-${contentTypeKey}`;
 
     let validators = this.validatorsCache[key];
     if (!validators) {

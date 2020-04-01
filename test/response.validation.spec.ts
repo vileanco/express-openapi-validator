@@ -34,6 +34,26 @@ describe(packageJson.name, () => {
           const json = ['user1', 'user2', 'user3'];
           return res.json(json);
         });
+        app.get(`${app.basePath}/pets/:id`, (req, res) => {
+          let json = {};
+          if (req.query.mode === 'array') {
+            json = [{
+              id: req.params.id,
+              name: 'name',
+              tag: 'tag',
+              bought_at: today.toISOString(),
+            }];
+          } else {
+            json = {
+              id: req.params.id,
+              name: 'name',
+              tag: 'tag',
+              bought_at: today.toISOString(),
+            };
+          }
+
+          return res.json(json);
+        });
         app.get(`${app.basePath}/pets`, (req, res) => {
           let json = {};
           if (req.query.mode === 'bad_type') {
@@ -85,8 +105,17 @@ describe(packageJson.name, () => {
           .to.have.property('code')
           .that.equals(500);
       }));
-
- // TODO add test for allOf - when allOf is used an array value passes when object is expected
+  it.only('should fail if response is array instead of object', async () =>
+    request(app)
+      .get(`${app.basePath}/pets/1?mode=array`)
+      .expect(500)
+      .then((r: any) => {
+        expect(r.body.message).to.contain('should be object');
+        expect(r.body)
+          .to.have.property('code')
+          .that.equals(500);
+      }));
+  // TODO add test for allOf - when allOf is used an array value passes when object is expected
   it('should fail if response is array when expecting object', async () =>
     request(app)
       .get(`${app.basePath}/object`)
