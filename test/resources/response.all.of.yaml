@@ -1,0 +1,57 @@
+openapi: "3.0.0"
+info:
+  title: "Test for allOf"
+  version: "1"
+servers:
+  - url: /v1/
+paths:
+  /all_of_1:
+    get:
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - type: "object"
+                    additionalProperties: false
+                    properties:
+                      property1:
+                        type: "integer"
+                  - type: "object"
+                    additionalProperties: false
+                    properties:
+                      property2:
+                        type: "string"
+                # $ref: "#/components/schemas/RouteType"
+components:
+  schemas:
+    RouteType:
+      type: object
+      allOf:
+        - type: "object"
+          additionalProperties: false
+          properties:
+            property1:
+              type: "integer"
+        - type: "object"
+          additionalProperties: false
+          properties:
+            property2:
+              type: "string"
+        # - $ref: "#/components/schemas/Type1"
+        # - $ref: "#/components/schemas/Type2"
+    Type1:
+      type: "object"
+      additionalProperties: false
+      properties:
+        property1:
+          type: "integer"
+    Type2:
+      type: "object"
+      additionalProperties: false
+      properties:
+        property2:
+          type: "string"
