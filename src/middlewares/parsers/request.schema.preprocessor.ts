@@ -57,16 +57,19 @@ export class RequestSchemaPreprocessor {
 
     if (parameters.length === 0) return;
 
-    const v = pathItem[pathItemKey];
-    if (v === parameters) return;
-    const ref = v?.parameters?.$ref;
+    const operation = pathItem[pathItemKey];
+    if (operation === parameters) return;
+    const ref = operation?.parameters?.$ref;
 
     const operationParameters = <
       Array<OpenAPIV3.ParameterObject | OpenAPIV3.ReferenceObject>
-    >(ref ? this.ajv.getSchema(ref)?.schema : v.parameters);
+    >(ref ? this.ajv.getSchema(ref)?.schema : operation.parameters);
 
+    if (!operationParameters) {
+      operation.parameters = []
+    }
     for (const param of parameters) {
-      operationParameters.push(param);
+      operation.parameters.push(param);
     }
   }
 
@@ -81,6 +84,9 @@ export class RequestSchemaPreprocessor {
           schema.required = required
             .slice(0, index)
             .concat(required.slice(index + 1));
+          if (schema.required.length === 0) {
+            delete schema.required;
+          }
         }
       }
     };

@@ -5,15 +5,25 @@ info:
   description: Path Level Parameters Test
 
 servers:
-  - url: /v1/
+  - url: /v1
 
 paths:
   /path_level_parameters:
     parameters:
-      - $ref: '#components/parameters/pathLevelParameter'
+      - $ref: '#/components/parameters/pathLevelParameter'
     get:
       parameters:
-        - $ref: '#components/parameters/operationLevelParameter'
+        - $ref: '#/components/parameters/operationLevelParameter'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+
+  /path_level_parameters_only:
+    parameters:
+      - $ref: '#/components/parameters/pathLevelParameter'
+    get:
       responses:
         '200':
           description: OK
