@@ -194,7 +194,7 @@ describe(packageJson.name, () => {
         expect(r.body).to.have.property('username');
       }));
 
-  it('should fail validation if required read only properties is missing from the response', async () =>
+  it.only('should fail validation if required read only properties is missing from the response', async () =>
     request(app)
       .post(`${app.basePath}/user`)
       .set('content-type', 'application/json')

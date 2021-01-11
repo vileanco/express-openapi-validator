@@ -21,6 +21,7 @@ export interface ValidationSchema extends ParametersSchema {
 
 export interface OpenAPIFrameworkInit {
   apiDoc: OpenAPIV3.Document;
+  apiResponseDoc?: OpenAPIV3.Document;
   basePaths: string[];
 }
 export type SecurityHandlers = {
@@ -70,7 +71,7 @@ export type Format = {
 };
 
 export type Serializer = {
-  format: string,
+  format: string;
   serialize: (o: unknown) => string;
 };
 
@@ -413,6 +414,8 @@ export interface OpenAPIFrameworkPathObject {
 interface OpenAPIFrameworkArgs {
   apiDoc: OpenAPIV3.Document | string;
   validateApiDoc?: boolean;
+  useDediateResponseApiDoc: boolean;
+  ajvOpts: ajv.Options;
   $refParser?: {
     mode: 'bundle' | 'dereference';
   };
@@ -421,7 +424,10 @@ interface OpenAPIFrameworkArgs {
 export interface OpenAPIFrameworkAPIContext {
   // basePaths: BasePath[];
   basePaths: string[];
-  getApiDoc(): OpenAPIV3.Document;
+  getApiDocs(): {
+    apiDoc: OpenAPIV3.Document;
+    apiResponseDoc: OpenAPIV3.Document;
+  };
 }
 
 export interface OpenAPIFrameworkVisitor {

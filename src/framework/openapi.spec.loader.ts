@@ -7,6 +7,7 @@ import {
 
 export interface Spec {
   apiDoc: OpenAPIV3.Document;
+  apiResponseDoc?: OpenAPIV3.Document;
   basePaths: string[];
   routes: RouteMetadata[];
 }
@@ -21,6 +22,7 @@ export interface RouteMetadata {
 
 interface DiscoveredRoutes {
   apiDoc: OpenAPIV3.Document;
+  apiResponseDoc?: OpenAPIV3.Document;
   basePaths: string[];
   routes: RouteMetadata[];
 }
@@ -46,12 +48,9 @@ export class OpenApiSpecLoader {
   private async discoverRoutes(): Promise<DiscoveredRoutes> {
     const routes: RouteMetadata[] = [];
     const toExpressParams = this.toExpressParams;
-    // const basePaths = this.framework.basePaths;
-    // let apiDoc: OpenAPIV3.Document = null;
-    // let basePaths: string[] = null;
-    const { apiDoc, basePaths } = await this.framework.initialize({
+    const { apiDoc, apiResponseDoc, basePaths } = await this.framework.initialize({
       visitApi(ctx: OpenAPIFrameworkAPIContext): void {
-        const apiDoc = ctx.getApiDoc();
+        const apiDoc = ctx.getApiDocs().apiDoc;
         const basePaths = ctx.basePaths;
         for (const bpa of basePaths) {
           const bp = bpa.replace(/\/$/, '');
@@ -92,6 +91,7 @@ export class OpenApiSpecLoader {
 
     return {
       apiDoc,
+      apiResponseDoc,
       basePaths,
       routes,
     };
@@ -104,7 +104,7 @@ export class OpenApiSpecLoader {
 
     // instead create our own syntax that is compatible with express' pathToRegex
     // /{path}* => /:path*)
-    // /{path}(*) => /:path*) 
+    // /{path}(*) => /:path*)
     const pass1 = part.replace(/\/{([^\*]+)}\({0,1}(\*)\){0,1}/g, '/:$1$2');
     // substitute params with express equivalent
     // /path/{id} => /path/:id

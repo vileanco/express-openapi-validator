@@ -1,6 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as $RefParser from 'json-schema-ref-parser';
 import { OpenAPISchemaValidator } from './openapi.schema.validator';
 import { BasePath } from './base.path';
 import {
@@ -9,7 +6,16 @@ import {
   OpenAPIFrameworkVisitor,
   OpenAPIV3,
 } from './types';
+import {
+  SpecPreprocessor,
+  SpecPreprocessorResponse,
+} from './spec.loader/preprocessor/schema.preprocess';
+import { SpecLoader, SpecLoaderResponse } from './spec.loader/spec.loader';
 
+export interface OpenAPISpecs {
+  reqSchema: OpenAPIV3.Document;
+  resSchema?: OpenAPIV3.Document;
+}
 export class OpenAPIFramework {
   private readonly args: OpenAPIFrameworkArgs;
   private readonly loggingPrefix: string = 'openapi.validator: ';
@@ -22,9 +28,9 @@ export class OpenAPIFramework {
     visitor: OpenAPIFrameworkVisitor,
   ): Promise<OpenAPIFrameworkInit> {
     const args = this.args;
-    const apiDoc = await this.loadSpec(args.apiDoc, args.$refParser);
+    const lsr = await this.loadSpec(args.apiDoc, args.$refParser);
 
-    const basePathObs = this.getBasePathsFromServers(apiDoc.servers);
+    const basePathObs = this.getBasePathsFromServers(lsr.reqSchema.servers);
     const basePaths = Array.from(
       basePathObs.reduce((acc, bp) => {
         bp.all().forEach((path) => acc.add(path));
@@ -34,12 +40,12 @@ export class OpenAPIFramework {
     const validateApiDoc =
       'validateApiDoc' in args ? !!args.validateApiDoc : true;
     const validator = new OpenAPISchemaValidator({
-      version: apiDoc.openapi,
+      version: lsr.reqSchema.openapi,
       // extensions: this.apiDoc[`x-${args.name}-schema-extension`],
     });
 
     if (validateApiDoc) {
-      const apiDocValidation = validator.validate(apiDoc);
+      const apiDocValidation = validator.validate(lsr.reqSchema);
 
       if (apiDocValidation.errors.length) {
         console.error(`${this.loggingPrefix}Validating schema`);
@@ -52,56 +58,50 @@ export class OpenAPIFramework {
         );
       }
     }
-    const getApiDoc = () => {
-      return apiDoc;
+    const prer = await this.preprocess(lsr);
+
+    const getApiDocs = () => {
+      return { apiDoc: prer.reqSchema, apiResponseDoc: prer.resSchema };
     };
 
-    this.sortApiDocTags(apiDoc);
+    this.sortApiDocTags(prer.reqSchema);
 
     if (visitor.visitApi) {
       // const basePaths = basePathObs;
       visitor.visitApi({
         basePaths,
-        getApiDoc,
+        getApiDocs,
       });
     }
     return {
-      apiDoc,
+      apiDoc: prer.reqSchema,
+      apiResponseDoc: prer.resSchema,
       basePaths,
     };
   }
 
-  private loadSpec(
+  private async loadSpec(
     filePath: string | object,
     $refParser: { mode: 'bundle' | 'dereference' } = { mode: 'bundle' },
-  ): Promise<OpenAPIV3.Document> {
-    // Because of this issue ( https://github.com/APIDevTools/json-schema-ref-parser/issues/101#issuecomment-421755168 )
-    // We need this workaround ( use '$RefParser.dereference' instead of '$RefParser.bundle' ) if asked by user
-    if (typeof filePath === 'string') {
-      const origCwd = process.cwd();
-      const specDir = path.resolve(origCwd, path.dirname(filePath));
-      const absolutePath = path.resolve(origCwd, filePath);
-      if (fs.existsSync(absolutePath)) {
-        // Get document, or throw exception on error
-        try {
-          process.chdir(specDir);
-          return $refParser.mode === 'dereference'
-            ? $RefParser.dereference(absolutePath)
-            : $RefParser.bundle(absolutePath);
-        } finally {
-          process.chdir(origCwd);
-        }
-      } else {
-        throw new Error(
-          `${this.loggingPrefix}spec could not be read at ${filePath}`,
-        );
-      }
-    }
-    return $refParser.mode === 'dereference'
-      ? $RefParser.dereference(filePath)
-      : $RefParser.bundle(filePath);
+  ): Promise<SpecLoaderResponse> {
+    return new SpecLoader({
+      filePath,
+      $refParserOpts: $refParser,
+      useDedicatedResponseDoc: this.args.useDediateResponseApiDoc,
+    }).load();
   }
 
+  private async preprocess(
+    slr: SpecLoaderResponse,
+  ): Promise<SpecPreprocessorResponse> {
+    return new SpecPreprocessor({
+      ajvOpts: this.args.ajvOpts,
+      reqSchema: slr.reqSchema,
+      resSchema: slr.reqSchema,
+      reqRefParser: slr.reqRefParser,
+      resRefParser: slr.resRefParser,
+    }).preprocess();
+  }
   private sortApiDocTags(apiDoc: OpenAPIV3.Document): void {
     if (apiDoc && Array.isArray(apiDoc.tags)) {
       apiDoc.tags.sort((a, b): number => {
