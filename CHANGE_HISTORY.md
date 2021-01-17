@@ -1,3 +1,13 @@
+## <small>4.10.7 (2021-01-17)</small>
+
+* fix: remove {} from OpenApiRequest.openapi type ([e53562c](https://github.com/cdimascio/express-openapi-validator/commit/e53562c))
+* fix: remove {} from OpenApiRequest.openapi type ([e26d43f](https://github.com/cdimascio/express-openapi-validator/commit/e26d43f))
+* test: 478 ([cec6013](https://github.com/cdimascio/express-openapi-validator/commit/cec6013))
+* test: add test for default response >=400 ([90061b5](https://github.com/cdimascio/express-openapi-validator/commit/90061b5))
+* test: remove only ([05e9cef](https://github.com/cdimascio/express-openapi-validator/commit/05e9cef))
+
+
+
 ## <small>4.10.6 (2021-01-15)</small>
 
 * fix: #469 - Response validation skipped on status codes >=400 ([57d3c0e](https://github.com/cdimascio/express-openapi-validator/commit/57d3c0e)), closes [#469](https://github.com/cdimascio/express-openapi-validator/issues/469)
