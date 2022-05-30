@@ -1,4 +1,4 @@
-import type { ErrorObject } from 'ajv-draft-04';
+import * as Ajv from 'ajv';
 import { Request } from 'express';
 import { ValidationError } from '../framework/types';
 
@@ -11,9 +11,7 @@ export class ContentType {
   private constructor(contentType: string | null) {
     this.contentType = contentType;
     if (contentType) {
-      this.withoutBoundary = contentType
-        .replace(/;\s{0,}boundary.*/, '')
-        .toLowerCase();
+      this.withoutBoundary = contentType.replace(/;\s{0,}boundary.*/, '').toLowerCase();
       this.mediaType = this.withoutBoundary.split(';')[0].toLowerCase().trim();
       this.charSet = this.withoutBoundary.split(';')[1]?.toLowerCase();
       this.isWildCard = RegExp(/^[a-z]+\/\*$/).test(this.contentType);
@@ -44,7 +42,9 @@ export class ContentType {
  * TODO - do this some other way
  * @param errors
  */
-export function augmentAjvErrors(errors: ErrorObject[] = []): ErrorObject[] {
+export function augmentAjvErrors(
+  errors: Ajv.ErrorObject[] = [],
+): Ajv.ErrorObject[] {
   errors.forEach((e) => {
     if (e.keyword === 'enum') {
       const params: any = e.params;
@@ -54,35 +54,22 @@ export function augmentAjvErrors(errors: ErrorObject[] = []): ErrorObject[] {
         : e.message;
     }
   });
-  const serDesPaths = new Set<string>();
-  return errors.filter((e) => {
-    if (serDesPaths.has(e.schemaPath)) {
-      return false;
-    }
-    if (e.params['x-eov-res-serdes']) {
-      // If response serialization failed,
-      // silence additional errors about not being a string.
-      serDesPaths.add(e.schemaPath.replace('x-eov-res-serdes', 'x-eov-type'));
-    }
-    return true;
-  });
+  return errors;
 }
 export function ajvErrorsToValidatorError(
   status: number,
-  errors: ErrorObject[],
+  errors: Ajv.ErrorObject[],
 ): ValidationError {
   return {
     status,
     errors: errors.map((e) => {
       const params: any = e.params;
       const required =
-        params?.missingProperty &&
-        e.instancePath + '/' + params.missingProperty;
+        params?.missingProperty && e.dataPath + '.' + params.missingProperty;
       const additionalProperty =
         params?.additionalProperty &&
-        e.instancePath + '/' + params.additionalProperty;
-      const path =
-        required ?? additionalProperty ?? e.instancePath ?? e.schemaPath;
+        e.dataPath + '.' + params.additionalProperty;
+      const path = required ?? additionalProperty ?? e.dataPath ?? e.schemaPath;
       return {
         path,
         message: e.message,

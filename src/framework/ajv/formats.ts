@@ -14,28 +14,22 @@ const base64regExp = /^[A-Za-z0-9+/]*(=|==)?$/;
 
 export const formats = {
   int32: {
-    validate: (i: number) =>
-      Number.isInteger(i) && i <= maxInt32 && i >= minInt32,
+    validate: i => Number.isInteger(i) && i <= maxInt32 && i >= minInt32,
     type: 'number',
   },
   int64: {
-    validate: (i: number) =>
-      Number.isInteger(i) && i <= maxInt64 && i >= minInt64,
+    validate: i => Number.isInteger(i) && i <= maxInt64 && i >= minInt64,
     type: 'number',
   },
   float: {
-    validate: (i: number) =>
-      typeof i === 'number' &&
-      (i === 0 ||
-        (i <= maxFloat && i >= minPosFloat) ||
-        (i >= minFloat && i <= maxNegFloat)),
+    validate: i => typeof i === 'number' && (i === 0 || (i <= maxFloat && i >= minPosFloat) || (i >= minFloat && i <= maxNegFloat)),
     type: 'number',
   },
   double: {
-    validate: (i: number) => typeof i === 'number',
+    validate: i => typeof i === 'number',
     type: 'number',
   },
-  byte: (b: string) => b.length % 4 === 0 && base64regExp.test(b),
+  byte: b => b.length % 4 === 0 && base64regExp.test(b),
   binary: alwaysTrue,
   password: alwaysTrue,
-} as const;
+};

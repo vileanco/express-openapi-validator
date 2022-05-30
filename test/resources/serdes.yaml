@@ -18,11 +18,6 @@ paths:
           schema:
             type: string
             enum: ['functionNotExists', 'functionBadFormat']
-        - name: shortOrLong
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/ShortOrLong"
       responses:
         200:
           description: ""
@@ -56,12 +51,6 @@ components:
     DateTime:
       type: string
       format: date-time
-    ShortOrLong:
-      type: string
-      format: mongo-objectid
-      anyOf:
-        - maxLength: 2
-        - minLength: 4
     StringList:
       type: string
       format: string-list
@@ -76,5 +65,3 @@ components:
           $ref: "#/components/schemas/DateTime"
         creationDate:
           $ref: "#/components/schemas/Date"
-        shortOrLong:
-          $ref: "#/components/schemas/ShortOrLong"

@@ -38,7 +38,7 @@ describe(packageJson.name, () => {
       .then((r) => {
         const e = r.body;
         expect(e.message).to.contain(
-          'request/headers must have required property ',
+          'request.headers should have required property ',
         );
       });
   });
@@ -55,7 +55,7 @@ describe(packageJson.name, () => {
       .then((r) => {
         const e = r.body;
         expect(e.message).to.contain(
-          'must NOT have more than 255 characters',
+          'should NOT be longer than 255 characters',
         );
       });
   });

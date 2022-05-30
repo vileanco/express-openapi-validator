@@ -1,9 +1,5 @@
-import AjvDraft4, {
-  ErrorObject,
-  Options,
-  ValidateFunction,
-} from 'ajv-draft-04';
-import addFormats from 'ajv-formats';
+import * as Ajv from 'ajv';
+import * as draftSchema from 'ajv/lib/refs/json-schema-draft-04.json';
 // https://github.com/OAI/OpenAPI-Specification/blob/master/schemas/v3.0/schema.json
 import * as openapi3Schema from './openapi.v3.schema.json';
 import { OpenAPIV3 } from './types.js';
@@ -14,23 +10,19 @@ export interface OpenAPISchemaValidatorOpts {
   extensions?: object;
 }
 export class OpenAPISchemaValidator {
-  private validator: ValidateFunction;
+  private validator: Ajv.ValidateFunction;
   constructor(opts: OpenAPISchemaValidatorOpts) {
-    const options: Options = {
-      schemaId: 'id',
+    const options: any = {
+      schemaId: 'auto',
       allErrors: true,
-      validateFormats: true,
-      coerceTypes: false,
-      useDefaults: false,
-      // Strict enforcement is nice, but schema is controlled by this library and known to be valid
-      strict: false,
     };
+
     if (!opts.validateApiSpec) {
       options.validateSchema = false;
     }
 
-    const v = new AjvDraft4(options);
-    addFormats(v, ['email', 'regex', 'uri', 'uri-reference']);
+    const v = new Ajv(options);
+    v.addMetaSchema(draftSchema);
 
     const ver = opts.version && parseInt(String(opts.version), 10);
     if (!ver) throw Error('version missing from OpenAPI specification');
@@ -40,9 +32,9 @@ export class OpenAPISchemaValidator {
     this.validator = v.compile(openapi3Schema);
   }
 
-  public validate(openapiDoc: OpenAPIV3.Document): {
-    errors: Array<ErrorObject> | null;
-  } {
+  public validate(
+    openapiDoc: OpenAPIV3.Document,
+  ): { errors: Array<Ajv.ErrorObject> | null } {
     const valid = this.validator(openapiDoc);
     if (!valid) {
       return { errors: this.validator.errors };

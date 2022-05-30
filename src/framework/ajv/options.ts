@@ -1,5 +1,6 @@
+import ajv = require('ajv');
 import {
-  NormalizedOpenApiValidatorOpts,
+  OpenApiValidatorOpts,
   Options,
   RequestValidatorOptions,
   ValidateRequestOpts,
@@ -7,15 +8,15 @@ import {
 } from '../types';
 
 export class AjvOptions {
-  private options: NormalizedOpenApiValidatorOpts;
-  constructor(options: NormalizedOpenApiValidatorOpts) {
+  private options: OpenApiValidatorOpts;
+  constructor(options: OpenApiValidatorOpts) {
     this.options = options;
   }
-  get preprocessor(): Options {
+  get preprocessor(): ajv.Options {
     return this.baseOptions();
   }
 
-  get response(): Options {
+  get response(): ajv.Options {
     const { coerceTypes, removeAdditional } = <ValidateResponseOpts>(
       this.options.validateResponses
     );
@@ -44,8 +45,12 @@ export class AjvOptions {
   }
 
   private baseOptions(): Options {
-    const { coerceTypes, formats, validateFormats, serDes, ajvFormats } =
-      this.options;
+    const {
+      coerceTypes,
+      unknownFormats,
+      validateFormats,
+      serDes,
+    } = this.options;
     const serDesMap = {};
     for (const serDesObject of serDes) {
       if (!serDesMap[serDesObject.format]) {
@@ -60,21 +65,22 @@ export class AjvOptions {
       }
     }
 
-    const options: Options = {
-      strict: false,
-      strictNumbers: true,
-      strictTuples: true,
-      allowUnionTypes: false,
-      validateSchema: false, // this is true for startup validation, thus it can be bypassed here
+    return {
+      validateSchema: false, // this is true for statup validation, thus it can be bypassed here
+      nullable: true,
       coerceTypes,
       useDefaults: true,
       removeAdditional: false,
-      validateFormats: validateFormats,
-      formats,
-      serDesMap,
-      ajvFormats,
+      unknownFormats,
+      format: validateFormats,
+      formats: this.options.formats.reduce((acc, f) => {
+        acc[f.name] = {
+          type: f.type,
+          validate: f.validate,
+        };
+        return acc;
+      }, {}),
+      serDesMap: serDesMap,
     };
-
-    return options;
   }
 }
