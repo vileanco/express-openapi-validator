@@ -1,0 +1,65 @@
+openapi: "3.0.2"
+info:
+  version: 1.0.0
+  title: requestBodies $ref
+  description: requestBodies $ref Test
+
+servers:
+  - url: /v1
+
+paths:
+  /one_of:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/TypeA"
+                - $ref: "#/components/schemas/TypeB"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/TypeA"
+                  - $ref: "#/components/schemas/TypeB"
+
+        "400":
+          description: Bad Request
+
+components:
+  schemas:
+    TypeA:
+      type: object
+      required:
+        - id
+        - type
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+            - A
+
+    TypeB:
+      type: object
+      required:
+        - id
+        - type
+        - extra
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+            - B
+        extra:
+          type: string
